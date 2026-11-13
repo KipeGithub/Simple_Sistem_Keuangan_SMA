@@ -1,14 +1,17 @@
-<?php $g = $this->db->query("SELECT id,saldo_awal,kas_masuk,kas_keluar FROM laporan WHERE tanggal = DATE(NOW())")->row_array(); 
+<?php 
+$g = $this->db->query("SELECT id,saldo_awal,kas_masuk,kas_keluar FROM laporan WHERE tanggal = DATE(NOW())")->row_array(); 
 
-$Keluar = $g['saldo_awal'] + $g['kas_masuk'] - $g['kas_keluar'];
-
+$saldoAwal  = isset($g['saldo_awal']) ? (float)$g['saldo_awal'] : 0.00;
+$kasMasuk   = isset($g['kas_masuk']) ? (float)$g['kas_masuk'] : 0.00;
+$kasKeluar  = isset($g['kas_keluar']) ? (float)$g['kas_keluar'] : 0.00;
+$Keluar     = $saldoAwal + $kasMasuk - $kasKeluar;
 ?>
 <div class="col-md-3 col-sm-6 col-xs-12">
     <div class="info-box">
         <span class="info-box-icon bg-aqua"><i class="glyphicon glyphicon-inbox"></i></span>
         <div class="info-box-content">
             <span class="info-box-text">Saldo Awal</span>
-            <span class="info-box-number"><small><?=rupiah($g['saldo_awal'])?></small></span>
+            <span class="info-box-number"><small><?=rupiah($saldoAwal)?></small></span>
         </div>
     </div>
 </div>
@@ -17,7 +20,7 @@ $Keluar = $g['saldo_awal'] + $g['kas_masuk'] - $g['kas_keluar'];
         <span class="info-box-icon bg-green"><i class="glyphicon glyphicon-import"></i></span>
         <div class="info-box-content">
             <span class="info-box-text">Kas Masuk</span>
-            <span class="info-box-number"><small><?=rupiah($g['kas_masuk'])?></small></span>
+            <span class="info-box-number"><small><?=rupiah($kasMasuk)?></small></span>
         </div>
     </div>
 </div>
@@ -27,7 +30,7 @@ $Keluar = $g['saldo_awal'] + $g['kas_masuk'] - $g['kas_keluar'];
         <span class="info-box-icon bg-red"><i class="glyphicon glyphicon-export"></i></span>
         <div class="info-box-content">
             <span class="info-box-text">Kas Keluar</span>
-            <span class="info-box-number"><small><?=rupiah($g['kas_keluar'])?></small></span>
+            <span class="info-box-number"><small><?=rupiah($kasKeluar)?></small></span>
         </div>
     </div>
 </div>

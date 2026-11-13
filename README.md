@@ -55,4 +55,4 @@ Sistem informasi manajemen keuangan sekolah ini merupakan sistem yang dipakai un
 4. Export Rekap Uang Masuk dan Keluar ke Pdf
 5. Manajemen *Database* dengan sistem serverSide agar aplikasi ringan jika data sudah banyak
 6. Grafik Uang Masuk dan Keluar
-7. CRUD AJAX dengan JQuery Validation
+7. CRUD AJAX dengan JQuery Validation3

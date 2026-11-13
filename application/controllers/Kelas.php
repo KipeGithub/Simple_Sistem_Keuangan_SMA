@@ -11,6 +11,10 @@ class Kelas extends CI_Controller {
 		parent::__construct();
 
 		is_login();
+		if ((int)$this->session->userdata('role') === 4) {
+			redirect('School_finance/portal');
+			return;
+		}
 		get_breadcrumb();
 		$this->load->model('M_'.$this->parents,'mod');
 		$this->load->library('form_validation');

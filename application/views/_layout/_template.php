@@ -8,7 +8,7 @@
         <meta name="description" content=" " /> 
         <meta name="keywords" content=" " />
         
-        <link rel="shorcut icon" type="text/css" href="<?php echo base_url('assets/dist/img/logo_harum_sentosa_baru.png')?>">
+        <link rel="shorcut icon" type="text/css" href="<?php echo base_url('assets/dist/img/tut_wuri_handayani.png')?>">
 
         <!-- File Css -->
         <?php echo @$_css; ?>
@@ -23,8 +23,22 @@
         }
     </SCRIPT>
 
-<?php $masuk = $this->db->get_where('users',['id'=> $this->session->userdata('id')])->row_array();?>
-    <body class="hold-transition skin-red sidebar-mini">
+<?php 
+  $masuk = $this->db->get_where('users',['id'=> $this->session->userdata('id')])->row_array();
+  $roleName = 'Wali Murid';
+  $roleBadge = 'label-default';
+  if ($masuk['role'] == 1) {
+    $roleName = 'Admin TU';
+    $roleBadge = 'label-primary';
+  } elseif ($masuk['role'] == 2) {
+    $roleName = 'Bendahara';
+    $roleBadge = 'label-success';
+  } elseif ($masuk['role'] == 3) {
+    $roleName = 'Kepala Sekolah';
+    $roleBadge = 'label-warning';
+  }
+?>
+    <body class="hold-transition skin-blue sidebar-mini">
         <div class="wrapper">
             <header class="main-header">
                  <!-- Header -->
@@ -32,26 +46,30 @@
             </header>
             <aside class="main-sidebar">
                 <section class="sidebar">
-                    <div class="user-panel">
-                        <div class="pull-left image">
-                          <img src="<?php echo base_url('assets/dist/img/').$masuk['gambar']?>" class="img-circle" alt="User Image">
+                    <div class="user-panel" style="padding: 12px 10px; background: rgba(0,0,0,0.18); border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+                        <div class="pull-left image" style="flex-shrink: 0;">
+                          <img src="<?php echo base_url('assets/dist/img/').($masuk['gambar'] ?: 'user.png') ?>" class="img-circle" alt="User Image" style="width: 40px; height: 40px; border: 2px solid rgba(255,255,255,0.25);">
                         </div>
-                        <div class="pull-left info">
-                          <p><?= $masuk['name']?></p>
+                        <div class="info" style="position: static; padding: 0; line-height: 1.25; overflow: hidden; width: calc(100% - 50px);">
+                          <p style="margin: 0 0 3px 0; font-weight: 700; font-size: 12.5px; color: #ffffff; white-space: normal; word-break: break-word; line-height: 1.3;">
+                            <?= htmlspecialchars($masuk['name'] ?? 'Pengguna') ?>
+                          </p>
+                          <span class="label <?= $roleBadge ?>" style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; display: inline-block;">
+                            <i class="fa fa-circle text-green" style="font-size: 7px; vertical-align: middle;"></i> <?= $roleName ?>
+                          </span>
                         </div>
                     </div>
                     <!-- Sidebar -->
                     <?php echo @$_sidebar; ?>
                 </section>
             </aside>
-            <div class="content-wrapper">
-                <section class="content-header">
-                    <h1> <i class="<?php echo $icon;?>"></i> Data <?php echo $judul; ?></h1>
+            <div class="content-wrapper" style="background-color: #f8fafc; min-height: 100vh;">
+                <section class="content-header" style="padding: 18px 25px 10px 25px;">
+                    <h1 style="font-size: 20px; font-weight: 700; color: #0F294A; margin: 0 0 5px 0;"> <i class="<?php echo $icon;?>"></i> <?php echo $judul; ?></h1>
                     <?php echo $this->breadcrumb->output(); ?>
                 </section>
-                <section class="content">
-                    <div class="row">
-                        <!-- Content -->
+                <section class="content" style="padding: 10px 25px 25px 25px;">
+                    <div class="content-container-fluid" style="width: 100%;">
                         <?php echo @$_content; ?>        
                     </div>      
                 </section>

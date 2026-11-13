@@ -1,206 +1,146 @@
 <?php 
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Controller Autentikasi Pengguna & Sesi (SMK DUMMY KIPE)
+ */
 class Auth extends CI_Controller {
 
-	function __construct(){
+	public function __construct() {
 		parent::__construct();
-
 		$this->load->library('form_validation');
+		$this->load->model('M_General');
 	}
 
-	public function index(){
-
-			if ($this->session->userdata('id')){
-			redirect('Beranda','refresh');
+	public function index() {
+		if ($this->session->userdata('id')) {
+			if ($this->session->userdata('role') == 4) {
+				redirect('School_finance/portal');
+			} else {
+				redirect('School_finance/dasbor');
+			}
+			return;
 		}
 
-		$this->form_validation->set_rules('email','Email','trim|required|valid_email');
-		$this->form_validation->set_rules('password','Password','trim|required');
+		$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
+		$this->form_validation->set_rules('password', 'Password', 'trim|required');
 
 		if ($this->form_validation->run() == false) {
-				$data['title']	= 'Halaman Login | SI Keuangan ';
-				$this->load->view('v_Login',$data);
-		} 
-		else {
+			$data['title'] = 'Masuk Sistem Informasi Keuangan | SMK DUMMY KIPE';
+			$this->load->view('v_Login', $data);
+		} else {
 			$this->_login();
 		}
 	}
 
-	private function _login(){
-
-		$email = $this->input->post('email');
+	private function _login() {
+		$email = $this->input->post('email', true);
 		$password = $this->input->post('password');
 
-		$user = $this->db->get_where('users', ['email'=> $email])->row_array();
+		$user = $this->db->get_where('users', ['email' => $email])->row_array();
 
-		if ($user){
-			if ($user['active'] == 1){
-				if (password_verify($password, $user['password'])){
-					$data = array(
-						'id' 	=> $user['id'],
-						'role'	=> $user['role']
-					);
-				$this->session->set_userdata( $data );
+		if ($user) {
+			if ($user['active'] == '1') {
+				if (password_verify($password, $user['password'])) {
+					$sessionData = [
+						'id'            => $user['id'],
+						'role'          => (int) $user['role'],
+						'name'          => $user['name'],
+						'email'         => $user['email'],
+						'avatar'        => $user['avatar'] ?: 'user.png',
+						'auth_provider' => $user['auth_provider'] ?: 'local',
+					];
+					$this->session->set_userdata($sessionData);
+					
+					// Update catatan rekap kas harian
 					$this->M_General->cek_laporan();
-				redirect('Beranda','refresh');
+
+					// Arahkan ke landing page sesuai peran sekolah
+					if ($user['role'] == 4) {
+						redirect('School_finance/portal');
+					} else {
+						redirect('School_finance/dasbor');
+					}
+				} else {
+					$this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><i class="fa fa-times-circle"></i> Kata sandi yang Anda masukkan salah.</div>');
+					redirect('Auth');
 				}
-				else{
-					$this->session->set_flashdata('message','<div class="alert alert-danger alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>  Password Salah</div>');
-		redirect($this->uri->segment(1),'refresh');	
-				}
+			} else {
+				$this->session->set_flashdata('message', '<div class="alert alert-warning alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><i class="fa fa-clock-o"></i> Akun Anda belum diaktifkan oleh pihak sekolah. Silakan hubungi bagian Tata Usaha.</div>');
+				redirect('Auth');
 			}
-			else{
-				$this->session->set_flashdata('message','<div class="alert alert-danger alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>  Akun belum aktif</div>');
-		redirect($this->uri->segment(1),'refresh');	
-			}
-		}
-		else{
-			$this->session->set_flashdata('message','<div class="alert alert-danger alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>  Email tidak terdaftar</div>');
-		redirect($this->uri->segment(1),'refresh');	
+		} else {
+			$this->session->set_flashdata('message', '<div class="alert alert-danger alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><i class="fa fa-exclamation-triangle"></i> Alamat email tidak terdaftar dalam sistem sekolah.</div>');
+			redirect('Auth');
 		}
 	}
 
-	function Simpan(){
-
-		$id   = $this->session->userdata('id');
-		$pass = $this->input->post('lama');
-		$baru = password_hash($this->input->post('baru'), PASSWORD_DEFAULT);
-		$user = $this->db->get_where('users', ['id'=> $id])->row_array();
-
-		if (password_verify($pass, $user['password'])){
-				$this->db->where('id',$id);
-				$this->db->update('users',array('password'=>$baru));
-				$data['status'] = true;
-		}else{
-			$data['status'] = false;
-		}
-		 $this->output->set_content_type('application/json')->set_output(json_encode($data));
-	}
-
-	public function registrasi (){
-
-		if ($this->session->userdata('id')){
-			redirect('Beranda','refresh');
+	public function registrasi() {
+		if ($this->session->userdata('id')) {
+			redirect('School_finance/dasbor');
+			return;
 		}
 
-		$this->form_validation->set_rules('name','Nama','trim|required');
-		$this->form_validation->set_rules('email','Email','trim|required|valid_email|is_unique[users.email]');
-		$this->form_validation->set_rules('password','Password','trim|required|min_length[6]|matches[password2]');
-		$this->form_validation->set_rules('password2','Kofirmasi Password','trim|required|matches[password]');
+		$this->form_validation->set_rules('name', 'Nama Lengkap', 'trim|required');
+		$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email|is_unique[users.email]');
+		$this->form_validation->set_rules('password', 'Kata Sandi', 'trim|required|min_length[6]|matches[password2]');
+		$this->form_validation->set_rules('password2', 'Konfirmasi Kata Sandi', 'trim|required|matches[password]');
 
 		if ($this->form_validation->run() == false) {
-				$data['title']	= 'Halaman Registrasi | SI Keuangan ';
-				$this->load->view('v_Registrasi',$data);
-		} 
-		else {
-			$email = filter_string($this->input->post('email',true));
-			$data = array(
-					'name' 		=> filter_string($this->input->post('name',true)),
-					'email' 	=> $email,
-					'gambar'	=> 'user.png',
-					'password'	=> password_hash($this->input->post('password'), PASSWORD_DEFAULT),
-					'role'		=> 2,
-					'active'	=> 0,
-					'created_on'=> time()
-			);
+			$data['title'] = 'Pendaftaran Akun Wali Murid / Siswa | SMK DUMMY KIPE';
+			$this->load->view('v_Registrasi', $data);
+		} else {
+			$email = $this->input->post('email', true);
+			$name = $this->input->post('name', true);
+			$pass = password_hash($this->input->post('password'), PASSWORD_DEFAULT);
 
-		$token = base64_encode(random_bytes(32));
+			$newUser = [
+				'email'         => $email,
+				'name'          => $name,
+				'password'      => $pass,
+				'role'          => 4, // Wali Murid / Siswa
+				'active'        => '1',
+				'gambar'        => 'user.png',
+				'auth_provider' => 'local',
+				'parent_email'  => $email,
+				'created_on'    => date('Y-m-d H:i:s'),
+			];
 
-		$user_token = array (
-			'email'			=> 	$email,
-			'token'			=> 	$token,
-			'date_created'	=>	time()	
-		);
+			$this->db->insert('users', $newUser);
+			$newUserId = $this->db->insert_id();
 
-		$this->M_General->insert('users',$data);
-		$this->M_General->insert('user_token',$user_token);
-		$this->_sendEmail($token,'verify');
+			// Otomatis kaitkan data siswa jika email cocok dengan parent_email
+			$this->db->where('parent_email', $email)->update('siswa', ['user_id' => $newUserId]);
 
-		$this->session->set_flashdata('message','<div class="alert alert-success alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button> Berhasil Mendaftar, kiik link aktivasi yang telah terkirim di email tersebut</div>');
-		redirect($this->uri->segment(1),'refresh');
+			$this->session->set_flashdata('message', '<div class="alert alert-success alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><i class="fa fa-check-circle"></i> Pendaftaran berhasil! Akun Wali Murid / Siswa Anda telah aktif. Silakan masuk di bawah ini.</div>');
+			redirect('Auth');
 		}
 	}
 
-	private function _sendEmail($token, $type){
-
-		$config = [
-			'protocol' 	=>	'smtp',
-			'smtp_host'	=>	'ssl://smtp.gmail.com',
-			'smtp_user'	=>	'Your Email',
-			'smtp_pass'	=>	'Your Password',
-			'smtp_port'	=>	465,
-			'mailtype'	=>	'html',
-			'charset'	=>	'utf-8',
-			'newline'	=>	"\r\n"
-		];
-
-		$this->load->library('email', $config);
-		$this->email->from('Your Email','Layanan Aktivasi Akun');
-		$this->email->to($this->input->post('email'));
-
-		if ($type == 'verify'){
-			$this->email->subject('Link Aktivasi Akun');
-			$this->email->message('Klik link ini untuk aktivasi akun : <a href="'.base_url().'Auth/verify?email='.$this->input->post('email').'&token='.urlencode($token).'"> Aktifasi</a>');
-		}
-
-		if($this->email->send()){
-			return true;
-		}
-		else{
-			echo $this->email->print_debugger();
-			die;
-		}
-
+	public function lupa_password() {
+		$data['title'] = 'Lupa Kata Sandi & Pemulihan Akun | SMK DUMMY KIPE';
+		$this->load->view('v_Lupa_Password', $data);
 	}
 
-	public function verify(){
+	public function proses_lupa_password() {
+		$email = $this->input->post('email', true);
+		$user = $this->db->get_where('users', ['email' => $email])->row_array();
 
-		$email = $this->input->get('email');
-		$token = $this->input->get('token');
-
-		$user = $this->db->get_where('users',['email'=>$email])->row_array();
-
-		if ($user){
-			$user_token = $this->db->get_where('user_token',['token'=>$token])->row_array();
-			if ($user_token){
-				if (time() - $user_token['date_created'] < (60*60*24)){
-
-					$this->db->set('active',1);
-					$this->db->where('email',$email);
-					$this->db->update('users');
-					$this->db->delete('user_token',['email'=>$email]);
-
-					$this->session->set_flashdata('message','<div class="alert alert-success alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button> '.$email.' Telah diaktifasi! Silahkan Login </div>');
-		redirect($this->uri->segment(1));
-
-				}	
-				else{
-					$this->db->delete('users',['email'=>$email]);
-					$this->db->delete('user_token',['email'=>$email]);
-
-					$this->session->set_flashdata('message','<div class="alert alert-danger alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>  Token Expired</div>');
-		redirect($this->uri->segment(1));
-				}
-			}
-			else{
-				$this->session->set_flashdata('message','<div class="alert alert-danger alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>  Token Salah</div>');
-		redirect($this->uri->segment(1));
-
-			}
+		if ($user) {
+			$this->session->set_flashdata('message', '<div class="alert alert-info"><i class="fa fa-info-circle"></i> Permintaan Anda telah dicatat. Demi keamanan data sekolah, silakan hubungi Staf Tata Usaha (Admin TU) untuk mereset kata sandi akun Anda.</div>');
+		} else {
+			$this->session->set_flashdata('message', '<div class="alert alert-danger"><i class="fa fa-times-circle"></i> Alamat email tidak terdaftar dalam sistem sekolah.</div>');
 		}
-		else{
-			$this->session->set_flashdata('message','<div class="alert alert-danger alert-dismissible"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>  Email tidak valid</div>');
-		redirect($this->uri->segment(1));
-		}
-
+		redirect('Auth/lupa_password');
 	}
 
-	public function logout(){
+	public function reset_password() {
+		$data['title'] = 'Atur Ulang Kata Sandi Baru | SMK DUMMY KIPE';
+		$this->load->view('v_Reset_Password', $data);
+	}
+
+	public function logout() {
 		$this->session->sess_destroy();
 		redirect('Auth');
 	}
 }
-
-/* End of file Beranda.php */
-/* Location: ./application/controllers/Beranda.php */
